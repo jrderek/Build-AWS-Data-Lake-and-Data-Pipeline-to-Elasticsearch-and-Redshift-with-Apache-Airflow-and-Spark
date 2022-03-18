@@ -9,17 +9,21 @@ Finally, to set this agency apart, we will augment the data with two custom mach
 The agency is growing rapidally and will need a robust way to handle more data. The current userbase creates about 20 million posts per year and the agency is hoping to grow that to 100 million posts per year very soon.
 
 Data Exploration
+
 The company has built an API client which will store a single json file for each post labeled with the post id under a folder for each user id. The api client runs once daily and is given a response from Instagram on the last 25 posts from each account. For any posts new to the datalake, a new json file will be created. The remaining responses from the API call will update previous files. Additionally, the API Client will return and store data from a 'users' endpoint with data particular to each account.
 
 5 Media Types x 2 Connection Types
+
 To add some complexity to this data, the company has two different relationships with it's users. Typical users on the platform are connected via a "Basic" api. This authoriztion allows for the company to see some data on the account relavent to the performance such as the count of likes and comments. However, Users who are working through the company on a specific paid campaign with a brand are allowed to connect their "Business" api. This endpoint returns more data such as "reach" and "impressions".
 
 Volume
+
 Currently the company would like to process 50,000 users on the platform each producing ~0.5 posts per day. However, an expandable solution is needed with an option to increase it's user base to 500K or more.
 
 Thus, each day the pipeline should consume 25k JSON and image files with a potential growth to 250k.
 
 A Repeat Process
+
 The nature of data is that it will be updated. This is an important consideration in the pipeline. A json with the specifics of the post be created within the first day of it being published to Instagram. However the API client must go back and reload the data again and again to update the post metrics with recent likes, comments, reach and impressions happening.
 
 Currently, the Instagram API returns the latest data on the most recent 25 posts for a user. The company's client will call each user's API reponse update the recent 25 posts each day.
@@ -33,51 +37,85 @@ Posts
 There are five types of Instagram post and each type will create a json file with slightly different values.
 
 IMAGE - These are in-feed image posts with a single photo
+
 JSON will include "likes" and "comments"
+
 CAROUSEL ALBUM - These are indentical to IMAGE type but contain multiple photos
+
 JSON will include a "children" key with a dictionary value leading to a list of image urls and ids
+
 VIDEO - These are similar to in-feed IMAGE type but with a video instead of an image
+
 JSON will include a "views" key in addition to the media is stored as an .mp4 file
+
 STORY IMAGE - These are temprorary posts that do not allow for likes and comments
+
 JSON will not incluede keys for "likes" or "comments", but will include new metrics "sticker_taps", "tap_backs", "swipe_ups"
+
 STORY VIDEO - Similar to STORY IMAGE but media is a video.
+
 JSON does not include a "media" key or a url to an mp4 file, but rather a "Thumbnail" key pointing to a url with a .jpg file stored.
+
 Source 1 - post data
 
 Sample CAROUSEL ALBUM post:
 
 {
 "caption":"This is the caption of the post",
+
 "comments_count":199,
+
 "id":"1784999999",
+
 "ig_id":"2248137977777777",
+
 "is_comment_enabled":true,
+
 "like_count":888,
+
 "media_type":"CAROUSEL_ALBUM",
+
 "media_url":"https://scontent-iad3-1.xx.fbcdn.net/v/t51.xxxxxx",
+
 "owner":{"id":"178414000888888",
+
          "username":"kariah.von",
+         
          "followers_count":5993},
+         
 "permalink":"https://www.instagram.com/p/B8y_ZttbnlwiT/",
+
 "shortcode":"Bfdjkaf;slwiT",
+
 "timestamp":"2021-02-20T17:05:52+0000",
+
 "username":"igUser",
+
 "children":{"data":
             [
                 {"id":"178823899999999",
+                
                 "media_type":"IMAGE",
+                
                 "media_url":"https://scontent-iad3-1.xx.fbcdn.net/v/t51.xxxxxx"
+                
                  },
                 {"id":"178823899999998",
+                
                 "media_type":"IMAGE",
+                
                 "media_url":"https://scontent-iad3-1.xx.fbcdn.net/v/t51.xxxxxx"
                 },
+                
                 {"id":"178823899999997",
+                
                 "media_type":"IMAGE",
+                
                 "media_url":"https://scontent-iad3-1.xx.fbcdn.net/v/t51.xxxxxx"},
             ]
            },
 "mentioned_users":"udacity, nanodegree",
+
 "hashtags":"learningData"
 }
 Soure 2 - user data
@@ -85,7 +123,9 @@ Soure 2 - user data
 Sample basic user data:
 
 {"created_at":"2020-05-09",
+
 "biography":"Person on Instagram who writes a bio",
+
 "id":"17841400036094485",
 "ig_id":287041203,
 "followers_count":5333,
@@ -128,6 +168,7 @@ Follower count is listed in users, but not always in posts. Posts from Business 
 Post and User data from the Basic connection will be missing Reach, Impressions and other metrics. The company is aware of this and expects data to be null from these users
 
 Data Model
+
 The company website would like to allow brands to search posts for keywords, mentions, and hashtags. It will also present those results with the corresponding media object. Only posts going back 180 days will be needed for search.
 
 Additionally, each IG user will be represented with a single profile page showing historical stats and recent posts.
@@ -161,6 +202,7 @@ Endpoint
 Only 6 months worth of data will need to be stored in the more expensive transactional data store, Elasticsearch. Therefore, this model will transform current data and where possible use only this time window from the data lake. This will reduce costs for the company and speed queries on the smaller database.
 
 AWS Lambda -
+
 The data lake will quickly grow to a volume which requires a lot of hardware to perform a traditional ETL. Given that we only need 6 months of data to transform and that data must be updated daily, rather than extract all data in our data lake only to filter out the last 6 months, this model will use Lambda Functions to process only the newest data to the transactional data model.
 
 AWS Lambda functions run on serverless architechture and can be run asyncronously at a large volume. Each data transformation runs in ~2 seconds and the company has access to 1,000 Lambda functions concurrently. While not the cheapest option, this could allow for nearly 40 million new posts to be ingested in a day, far more than the company will see in near future.
@@ -499,6 +541,7 @@ Increase the number of nodes in the Elasticsearch cluster and create replicas in
 Increase the number of nodes in the Redshift cluster and create replicas in additional AWS availabity zones
 
 Next Steps
+         
 This project will be the foundation of a more robust data pipeline.
 
 Add NLP and Tensorflow
